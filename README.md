@@ -1,5 +1,7 @@
 # Blender Video Editing Workflow
 
+Publication revision **0.1.3-r1** fixes Windows CI temporary-path normalization in test fixtures. Product/runtime versions are unchanged.
+
 Editable Blender VSE workflows for whitebox shot references, AI-video return editing and rendered animation. A shared extension core, SHA-bound CLI snapshot, portable agent skill and four declarative SDR templates are distributed together.
 
 **Distribution 0.1.3 · CLI 0.63.0 · addon 0.1.1 · template library 0.1.0 · GPL-3.0-or-later**

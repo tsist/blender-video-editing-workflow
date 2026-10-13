@@ -1,6 +1,6 @@
 {
   "repository": "blender-video-editing-workflow",
-  "release": "0.1.3",
+  "release": "0.1.3-r1",
   "cli": "0.63.0",
   "distribution": "0.1.3",
   "addon": "0.1.1",
@@ -32,8 +32,8 @@
     },
     {
       "file": "CHANGELOG.md",
-      "sha256": "85331c3843de77594bf73edca27add346448fdf3e2980525ce10351035fb3401",
-      "bytes": 263
+      "sha256": "a90b79bc87282bf2f6f53e68531537b6052aa7d1e2c10007cc2d8676022feaec",
+      "bytes": 464
     },
     {
       "file": "CONTRIBUTING.md",
@@ -802,8 +802,8 @@
     },
     {
       "file": "docs/VALIDATION.md",
-      "sha256": "b91a562366c473aa9f4d919a2b2422295300dd66944424ae28a333f1d5cb9c9b",
-      "bytes": 2325
+      "sha256": "4e53215190787b2af66d80b279f4151d860dfde5771dce8b5c1767f063884aa4",
+      "bytes": 2549
     },
     {
       "file": "docs/VIDEO-EDITING.md",
@@ -827,18 +827,18 @@
     },
     {
       "file": "README.md",
-      "sha256": "e2c06204aaea88772f4bb476d8bf74ca56f86b4abd47103c72b8904206b62ef2",
-      "bytes": 2633
+      "sha256": "6020e8ebf4b2b2257cf7c9dba3f1f39e6be012228d3dbc1459b00c9a0d7489a5",
+      "bytes": 2772
     },
     {
       "file": "README.zh-CN.md",
-      "sha256": "4f30bc7fc44bb94394fd71cfa13c16868d96712faf823402e187285c3ea55a94",
-      "bytes": 1816
+      "sha256": "43e8b6e465b5cfee5b2197e14d330f58934b301754c5adca479ba3c16cb49921",
+      "bytes": 1955
     },
     {
       "file": "RELEASE-VALIDATION.json",
-      "sha256": "52a2bed63ff5e810d65f64847faa4118640c86a4c1d6c9f2bb3eae683e5bfddf",
-      "bytes": 2073
+      "sha256": "b43111e436bd8a14319b00f4c3c6cfe79b04d758f4aa66cfcd5eaaa7f3a7994e",
+      "bytes": 2211
     },
     {
       "file": "scripts/build_release.py",
@@ -957,8 +957,8 @@
     },
     {
       "file": "templates/video/test_template_library.py",
-      "sha256": "6d3bd38dd7ae2090447d7b4f1b3c820f3fa2ea1fa2b867905624829edfbf6ce1",
-      "bytes": 24253
+      "sha256": "b8b5f4156413eb23ceb8dc8048263e3908e7fced874b66366d0b7e0ef33f572a",
+      "bytes": 24346
     },
     {
       "file": "tests/test_host.py",

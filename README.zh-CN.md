@@ -1,5 +1,7 @@
 # Blender 后期剪辑工作流
 
+Publication revision **0.1.3-r1** fixes Windows CI temporary-path normalization in test fixtures. Product/runtime versions are unchanged.
+
 用于白膜分镜参考、AI 视频回流成片和 Blender 动画剪辑。源码包包含同一已验 CLI 快照、小型 VSE 插件核心、可移植配套技能与通用模板库。
 
 **发行版 0.1.3｜CLI 0.63.0｜插件 0.1.1｜模板库 0.1.0｜GPL-3.0-or-later**
