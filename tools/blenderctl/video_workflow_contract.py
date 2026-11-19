@@ -79,16 +79,45 @@ def normalize_inspect_params(value):
     return _call(c.normalize_inspect_params, out)
 
 
+def normalize_ripple_params(value):
+    out = _base(value, {'file', 'expected_sha256', 'resources', 'scene', 'workflow_id',
+                        'clip_id', 'duration'}, {'edge', 'implementation_sha256'})
+    return _call(c.normalize_ripple_params, out)
+
+
+def normalize_otio_export_params(value):
+    out = _base(value, {'file', 'expected_sha256', 'resources', 'scene', 'workflow_id'},
+                {'implementation_sha256'})
+    return _call(c.normalize_otio_export_params, out)
+
+
+def normalize_otio_import_params(value):
+    out = _base(value, {'file', 'expected_sha256', 'resources', 'otio', 'scene', 'workflow_id'},
+                {'implementation_sha256'})
+    return _call(c.normalize_otio_import_params, out)
+
+
 def normalize_command(command, params):
     if command == 'video.run':
         return normalize_params(params)
     if command == 'video.inspect':
         return normalize_inspect_params(params)
+    if command == 'video.ripple':
+        return normalize_ripple_params(params)
+    if command == 'video.otio_export':
+        return normalize_otio_export_params(params)
+    if command == 'video.otio_import':
+        return normalize_otio_import_params(params)
     raise Failure('INVALID_REQUEST', 'Unknown video command')
 
 
 def signature(params):
-    body = {key: params[key] for key in ('file', 'expected_sha256', 'resources', 'manifest', 'output', 'implementation_sha256', 'media_probe') if key in params}
+    if 'manifest' in params:
+        body = {key: params[key] for key in ('file', 'expected_sha256', 'resources', 'manifest', 'output', 'implementation_sha256', 'media_probe') if key in params}
+    else:
+        body = {key: params[key] for key in ('file', 'expected_sha256', 'resources', 'otio', 'scene',
+                                             'workflow_id', 'clip_id', 'duration', 'edge',
+                                             'implementation_sha256') if key in params}
     return hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
@@ -134,4 +163,6 @@ def input_documents(params, command=None):
 
 def schemas():
     return copy.deepcopy({'run': c.RUN_PARAMS_SCHEMA, 'inspect': c.INSPECT_PARAMS_SCHEMA,
-                          'manifest': c.MANIFEST_SCHEMA, 'output': c.OUTPUT_SCHEMA, 'clip': c.CLIP_SCHEMA})
+                          'manifest': c.MANIFEST_SCHEMA, 'output': c.OUTPUT_SCHEMA, 'clip': c.CLIP_SCHEMA,
+                          'ripple': c.RIPPLE_PARAMS_SCHEMA, 'otio_export': c.OTIO_EXPORT_PARAMS_SCHEMA,
+                          'otio_import': c.OTIO_IMPORT_PARAMS_SCHEMA})

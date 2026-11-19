@@ -354,7 +354,7 @@ def _execute_worker(job, parent_checkpoint=None):
             command = [launch["blender"], "--background", "--factory-startup", "--disable-autoexec",
                        "--offline-mode", "--threads", str(limits['cpu_threads'] if limits else 2), "--python-exit-code", "23",
                        "--python", str(Path(__file__).with_name("worker.py")), "--", str(job)]
-            if request['command'] in ('video.run', 'video.inspect'):
+            if request['command'].startswith('video.'):
                 # Blender's global --threads overrides even saved RNA getters
                 # (threads_mode becomes FIXED); it is not persisted in .blend.
                 # Inspect native saved settings, limit only temporary renders.

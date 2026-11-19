@@ -2,14 +2,14 @@
 name: blender-video-editing
 description: 使用 Blender 原生 VSE、Video Editing Workflow 插件与公共 CLI 制作白膜分镜参考、剪辑 AI 视频和 Blender 动画，处理镜头候选、人工接续、声音字幕、模板、输出与验收；用于实际剪辑制作，不替代建模、复杂合成或生成平台提交。
 metadata:
-  version: "0.1.3"
+  version: "0.1.4"
 ---
 
 # Blender 视频剪辑
 
 围绕故事意图与实际可观看的成片工作。主要交付白膜参考剪辑与对应 AI 成片，次要处理 Blender 渲染动画；同样可以接收 CG、动画与实拍素材。插件管理时间线语义和薄 GUI，公共 CLI 管理作业、资源、保存、恢复与输出，agent 负责剪辑判断、观察和迭代。
 
-发行版 0.1.3 对应 CLI 0.63.0、插件核心 0.1.1、模板库 0.1.0。运行需要 Python 3.12+ 和 Blender 5.2；既有制作验证基线为 Blender 5.2.1 LTS。将 `BLENDERCTL_ROOT` 设为匹配版本的仓库根，使用根目录 `blenderctl.ps1` 或 `tools/blenderctl/cli.py`。独立安装本技能时仍须保留该仓库与工具依赖；技能目录内的文档和 helper 不能替代运行核心。首次执行读 [公共执行合同](references/execution.md)。
+发行版 0.1.4 对应 CLI 0.63.0、插件核心 0.1.2、模板库 0.1.0。Windows 上使用仓库根目录的 `video-blenderctl.ps1 --blender $Blender`。波纹剪辑适用于已验 Blender 5.2.1 和 5.3.0，纯剪切 OTIO 交换使用 Blender 5.3.0。将 `BLENDERCTL_ROOT` 设为匹配版本的仓库根。独立安装技能时保留对应仓库与工具依赖。[公共执行合同](references/execution.md)
 
 ## 创作与输入
 

@@ -239,9 +239,10 @@ def main():
         elif command in ('media.prepare','media.export'):
             import media
             data=getattr(media,command.split('.')[1])(request['params'],job)
-        elif command in ('video.run','video.inspect'):
+        elif command in ('video.run','video.inspect','video.ripple',
+                         'video.otio_export','video.otio_import'):
             import video_workflow
-            data=getattr(video_workflow,command.split('.')[1])(request['params'],job)
+            data=getattr(video_workflow,command.split('.',1)[1])(request['params'],job)
         elif command in ('compositing.run','compositing.inspect'):
             import compositing_workflow
             data=getattr(compositing_workflow,command.split('.')[1])(request['params'],job)

@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 id = "video_editing_workflow"
-version = "0.1.1"
+version = "0.1.2"
 name = "Video Editing Workflow"
 tagline = "Managed editable video timelines and inspection"
 maintainer = "Blender AI"

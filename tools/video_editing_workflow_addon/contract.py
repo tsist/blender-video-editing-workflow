@@ -151,6 +151,16 @@ RUN_PARAMS_SCHEMA = obj({'file': PATH, 'expected_sha256': SHA, 'resources': arr(
 INSPECT_PARAMS_SCHEMA = obj({'file': PATH, 'expected_sha256': SHA, 'resources': arr(FILE),
     'scene': NAME, 'workflow_id': ID, 'implementation_sha256': SHA},
     ('file', 'expected_sha256', 'resources', 'scene'))
+RIPPLE_PARAMS_SCHEMA = obj({'file': PATH, 'expected_sha256': SHA, 'resources': arr(FILE),
+    'scene': NAME, 'workflow_id': ID, 'clip_id': ID, 'duration': DURATION,
+    'edge': {'enum': ['END']}, 'implementation_sha256': SHA},
+    ('file', 'expected_sha256', 'resources', 'scene', 'workflow_id', 'clip_id', 'duration'))
+OTIO_EXPORT_PARAMS_SCHEMA = obj({'file': PATH, 'expected_sha256': SHA, 'resources': arr(FILE),
+    'scene': NAME, 'workflow_id': ID, 'implementation_sha256': SHA},
+    ('file', 'expected_sha256', 'resources', 'scene', 'workflow_id'))
+OTIO_IMPORT_PARAMS_SCHEMA = obj({'file': PATH, 'expected_sha256': SHA, 'resources': arr(FILE),
+    'otio': FILE, 'scene': NAME, 'workflow_id': ID, 'implementation_sha256': SHA},
+    ('file', 'expected_sha256', 'resources', 'otio', 'scene', 'workflow_id'))
 
 
 def _fail(message):
@@ -556,3 +566,23 @@ def normalize_params(value):
 
 def normalize_inspect_params(value):
     return _inputs(value, INSPECT_PARAMS_SCHEMA)
+
+
+def normalize_ripple_params(value):
+    value = _inputs(value, RIPPLE_PARAMS_SCHEMA)
+    value.setdefault('edge', 'END')
+    return value
+
+
+def normalize_otio_export_params(value):
+    return _inputs(value, OTIO_EXPORT_PARAMS_SCHEMA)
+
+
+def normalize_otio_import_params(value):
+    value = _inputs(value, OTIO_IMPORT_PARAMS_SCHEMA)
+    value['otio'] = _normalize_file(value['otio'])
+    declared = {row['file'].casefold(): row for row in value['resources']}
+    row = declared.get(value['otio']['file'].casefold())
+    if row is None or row['expected_sha256'] != value['otio']['expected_sha256']:
+        _fail('Resource closure/SHA mismatch: ' + value['otio']['file'])
+    return value

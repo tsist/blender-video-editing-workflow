@@ -12,7 +12,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 ADDON = 'tools/video_editing_workflow_addon/'
 BLOCKED = {'.git', '__pycache__', '.venv', 'audit', 'research', 'tests-output', 'dist'}
-IDENTITY = '4a6e44b18e1187baf1569e0f93f3eda4ae2ffa170a3d73b8c7083c0ca8f38bcb'
+IDENTITY = '846014645bab95ee82f862dbd72979e2c3260f7b1470bb0781f6fccebe57a8f8'
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
@@ -54,8 +54,8 @@ def verify(root=ROOT):
     runtime = [{'file': p.relative_to(root).as_posix(), 'expected_sha256': sha(p.read_bytes())}
                for p in sorted(runtime_paths)]
     identity = sha(json.dumps(runtime, sort_keys=True, separators=(',', ':')).encode())
-    if len(runtime) != 189 or identity != IDENTITY or identity != publication['runtime_identity']:
-        raise ValueError('Original 189-file video runtime identity changed')
+    if len(runtime) != publication['runtime_files'] or identity != IDENTITY or identity != publication['runtime_identity']:
+        raise ValueError('Video runtime differs from the published inventory')
     if not set(row['file'] for row in runtime) <= set(names):
         raise ValueError('Runtime missing from release inventory')
     for name in names:

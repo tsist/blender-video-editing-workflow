@@ -116,13 +116,30 @@ def parser():
     video=sub.add_parser('video',help='protected saved-file native VSE editing; development candidate')
     va=video.add_subparsers(dest='action',required=True,parser_class=Parser)
     vd=va.add_parser('describe',help='cheap video contract discovery; no Blender or job')
-    vd.add_argument('--operation',choices=['run','inspect','manifest','output','clip'])
+    vd.add_argument('--operation',choices=['run','inspect','manifest','output','clip',
+                                           'ripple','otio_export','otio_import'])
     vd.add_argument('--schema',action='store_true');vd.add_argument('--section')
     vr=va.add_parser('run');vr.add_argument('file');vr.add_argument('--expected-sha256',required=True)
     vr.add_argument('--manifest',type=Path,required=True);vr.add_argument('--resources',type=Path,required=True)
     vr.add_argument('--output',type=Path);vr.add_argument('--resume',type=Path);vr.add_argument('--resume-sha256')
     vi=va.add_parser('inspect');vi.add_argument('file');vi.add_argument('--expected-sha256',required=True)
     vi.add_argument('--resources',type=Path,required=True);vi.add_argument('--scene',required=True);vi.add_argument('--workflow-id')
+    vri=va.add_parser('ripple',help='right-edge duration ripple on a short SDR managed timeline')
+    vri.add_argument('file');vri.add_argument('--expected-sha256',required=True)
+    vri.add_argument('--resources',type=Path,required=True);vri.add_argument('--scene',required=True)
+    vri.add_argument('--workflow-id',required=True);vri.add_argument('--clip',required=True)
+    vri.add_argument('--duration',type=int,required=True);vri.add_argument('--edge',choices=['END'],default='END')
+    vot=va.add_parser('otio',help='basic cut-only OpenTimelineIO round-trip for managed timelines')
+    vota=vot.add_subparsers(dest='otio_action',required=True,parser_class=Parser)
+    voe=vota.add_parser('export',help='export one neutral managed MOVIE/SOUND cut timeline')
+    voe.add_argument('file');voe.add_argument('--expected-sha256',required=True)
+    voe.add_argument('--resources',type=Path,required=True);voe.add_argument('--scene',required=True)
+    voe.add_argument('--workflow-id',required=True)
+    voi=vota.add_parser('import',help='create a new managed scene from one cut-only OTIO timeline')
+    voi.add_argument('file');voi.add_argument('--expected-sha256',required=True)
+    voi.add_argument('--resources',type=Path,required=True);voi.add_argument('--scene',required=True)
+    voi.add_argument('--workflow-id',required=True);voi.add_argument('--otio',required=True)
+    voi.add_argument('--otio-sha256',required=True)
     compositing=sub.add_parser('compositing',help='protected native compositing graphs and observed saved-file outputs')
     ca=compositing.add_subparsers(dest='action',required=True,parser_class=Parser)
     cd=ca.add_parser('describe',help='cheap compositing contract discovery; no Blender or job')
@@ -329,7 +346,10 @@ def main(argv=None):
             return 0
         if args.compact:
             if args.command in ('material', 'geometry', 'workflow', 'lighting', 'compositing', 'video'):
-                compact_command = args.command + '.' + args.action
+                if args.command == 'video' and args.action == 'otio':
+                    compact_command = 'video.otio_' + args.otio_action
+                else:
+                    compact_command = args.command + '.' + args.action
             elif args.command == 'request':
                 compact_request = read_json(args.file)
                 if not isinstance(compact_request, dict):
@@ -432,17 +452,28 @@ def main(argv=None):
                 request={'schema_version':SCHEMA,'command':args.command+'.'+args.action,'params':params}
             elif args.command=='video':
                 params={'file':args.file,'expected_sha256':args.expected_sha256,'resources':read_json(args.resources)}
-                if args.action=='run':
+                if args.action=='otio':
+                    params['scene']=args.scene
+                    params['workflow_id']=args.workflow_id
+                    if args.otio_action=='import':
+                        params['otio']={'file':str(Path(args.otio).resolve()),'expected_sha256':args.otio_sha256}
+                    request={'schema_version':SCHEMA,'command':'video.otio_'+args.otio_action,'params':params}
+                elif args.action=='ripple':
+                    params.update(scene=args.scene,workflow_id=args.workflow_id,clip_id=args.clip,
+                                  duration=args.duration,edge=args.edge)
+                    request={'schema_version':SCHEMA,'command':'video.ripple','params':params}
+                elif args.action=='run':
                     params['manifest']=read_json(args.manifest)
                     if args.output:params['output']=read_json(args.output)
                     if args.resume:
                         if not args.resume_sha256:raise Failure('INVALID_REQUEST','--resume requires SHA')
                         params['resume']={'file':str(args.resume.resolve()),'expected_sha256':args.resume_sha256}
                     elif args.resume_sha256:raise Failure('INVALID_REQUEST','Resume SHA needs report')
+                    request={'schema_version':SCHEMA,'command':'video.run','params':params}
                 else:
                     params['scene']=args.scene
                     if args.workflow_id:params['workflow_id']=args.workflow_id
-                request={'schema_version':SCHEMA,'command':'video.'+args.action,'params':params}
+                    request={'schema_version':SCHEMA,'command':'video.inspect','params':params}
             elif args.command=='compositing' and args.action in ('template-save','template-run','batch','study'):
                 request={'schema_version':SCHEMA,'command':'compositing.'+args.action,'params':read_json(args.params)}
             elif args.command=='compositing':

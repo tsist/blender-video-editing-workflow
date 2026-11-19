@@ -22,12 +22,16 @@ def describe(operation=None, schema=False, section=None):
         if operation not in available:
             raise Failure('INVALID_REQUEST', '--schema requires a video operation')
         return {'operation': operation, 'schema': available[operation]}
-    return {'cli_version': VERSION, 'addon_version': '0.1-dev', 'video_schema_version': '1.0',
-            'operations': ['video.run', 'video.inspect'], 'actions': ['create', 'patch'],
+    return {'cli_version': VERSION, 'addon_version': '0.1.2', 'video_schema_version': '1.0',
+            'operations': ['video.run', 'video.inspect', 'video.ripple',
+                           'video.otio_export', 'video.otio_import'],
+            'actions': ['create', 'patch', 'ripple', 'otio_export', 'otio_import'],
             'state_source': 'SAVED_DISK_V1; explicit GUI saved snapshot only',
             'contract': descriptor(Path(contract.__file__)),
-            'compact': '--compact request/video run/video inspect/job status/result/wait; full report persists',
+            'compact': '--compact video run/inspect/ripple/otio export/import/job status/result/wait; full report persists',
             'support': {'implementation': 'development candidate; capability presence is not acceptance',
+                        'ripple': 'short SDR managed right-edge duration ripple; no 4K/HDR expansion',
+                        'OTIO': 'cut-only MOVIE/SOUND round-trip using Blender 5.3 bundled OTIO; subtitles/effects/retime rejected',
                         'HDR10_PQ': 'STANDARD_100/REQUIRE_OPAQUE technical candidate; explicit SHA-bound OCIO and virtual mastering; device viewing not_run',
                         'visual_quality': 'requires actual output observation', 'audio_quality': 'requires actual listening',
                         'HDR_device_viewing': 'not_run'},
@@ -47,12 +51,12 @@ def compact(result, requested_command=None):
     command = requested_command or result.get('command')
     if root and (root / 'request.json').is_file():
         command = read_json(root / 'request.json')['command']
-    if command not in ('video.run', 'video.inspect'):
+    if not isinstance(command, str) or not command.startswith('video.'):
         raise Failure('INVALID_REQUEST', 'Not a video job')
     out = {key: result[key] for key in ('schema_version', 'cli_version', 'command', 'job_id', 'ok', 'error') if key in result}
     report_path = root / 'video-report.json' if root else None
     report = read_json(report_path) if report_path and report_path.is_file() else result.get('data') or {}
-    keys = ('status', 'source', 'candidate', 'implementation_sha256', 'protection', 'recovery', 'checks', 'metrics', 'error', 'support', 'signature', 'resumed_from')
+    keys = ('status', 'source', 'candidate', 'implementation_sha256', 'protection', 'recovery', 'checks', 'metrics', 'error', 'support', 'signature', 'resumed_from', 'ripple', 'otio')
     summary = {key: report[key] for key in keys if key in report}
     inspection = report.get('inspection', {})
     if isinstance(inspection, dict):
@@ -78,7 +82,8 @@ def compact(result, requested_command=None):
         summary['progress'] = progress_summary(read_json(root / 'video-progress.json'))
     out.update(output_format='compact', data=summary, artifacts={'job_directory': str(root)} if root else {})
     if root:
-        for name in ('request', 'result', 'video-report', 'video-progress', 'video-reopen', 'video-shots', 'video-manifest'):
+        for name in ('request', 'result', 'video-report', 'video-progress', 'video-reopen', 'video-shots',
+                     'video-manifest', 'video-ripple', 'video-otio', 'video-otio-verification'):
             path = root / (name + '.json')
             if path.is_file():
                 out['artifacts'][name] = descriptor(path)

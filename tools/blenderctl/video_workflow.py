@@ -10,7 +10,9 @@ import bpy
 from protocol import Failure, atomic_json, digest, read_json
 from video_identity import implementation_sha256
 from video_workflow_contract import (_call, input_documents, normalize_params,
-                                     normalize_inspect_params, signature)
+                                     normalize_inspect_params, normalize_ripple_params,
+                                     normalize_otio_export_params, normalize_otio_import_params,
+                                     signature)
 from video_verifier import mismatch, runtime_identity
 from video_editing_workflow_addon import core, contract
 
@@ -49,20 +51,24 @@ def _resource_closure(params):
 
 
 def _saved_expectation(params):
-    manifest = params['manifest']
-    return {'inspection': _json(_call(core.inspect, manifest['scene'], manifest['workflow_id'])),
-            'protection': _json(_call(core.snapshot_protection, manifest['scene'])),
+    manifest = params.get('manifest', {})
+    scene = manifest.get('scene', params.get('scene'))
+    workflow_id = manifest.get('workflow_id', params.get('workflow_id'))
+    return {'inspection': _json(_call(core.inspect, scene, workflow_id)),
+            'protection': _json(_call(core.snapshot_protection, scene)),
             'resource_paths': _resource_closure(params)}
 
 
-def _reopen(candidate, params, report, job, progress):
+def _reopen(candidate, params, report, job, progress, scene=None, workflow_id=None):
     request = job / 'video-verification-request.json'
     output = job / 'video-reopen.json'
     if request.exists() or output.exists():
         raise Failure('CONFLICT', 'Owned video verification phase already exists')
+    manifest = params.get('manifest', {})
+    scene = scene or manifest.get('scene', params.get('scene'))
+    workflow_id = workflow_id or manifest.get('workflow_id', params.get('workflow_id'))
     config = {'candidate': candidate, 'implementation_sha256': params['implementation_sha256'],
-              'runtime': report['runtime'], 'scene': params['manifest']['scene'],
-              'workflow_id': params['manifest']['workflow_id'],
+              'runtime': report['runtime'], 'scene': scene, 'workflow_id': workflow_id,
               'saved_expectation': report['saved_expectation'],
               'resources': input_documents(params), 'output': str(output)}
     atomic_json(request, config)
@@ -130,7 +136,7 @@ def run(params, job, *, cancel_parent=None):
     params = normalize_params(params)
     job = Path(job)
     started = time.monotonic()
-    report = {'video_report_version': '1.0', 'addon_version': '0.1-dev', 'status': 'running',
+    report = {'video_report_version': '1.0', 'addon_version': '0.1.2', 'status': 'running',
               'source': {'file': params['file'], 'sha256': params['expected_sha256']},
               'runtime': runtime_identity(bpy), 'implementation_sha256': params['implementation_sha256'],
               'signature': signature(params), 'recovery': {'available': False}, 'output_files': [],
@@ -257,13 +263,281 @@ def run(params, job, *, cancel_parent=None):
         raise
 
 
+def _progress(job, report, started, cancel_parent=None):
+    last = [None, 0.0]
+
+    def progress(stage, **extra):
+        if (job / 'cancel.request').exists() or (cancel_parent and (Path(cancel_parent) / 'cancel.request').exists()):
+            raise Failure('CANCELLED', 'Video cancelled at ' + stage)
+        now = time.monotonic()
+        report['stage'] = stage
+        if stage != last[0]:
+            atomic_json(job / 'video-report.json', report)
+        if stage != last[0] or now - last[1] >= .5:
+            atomic_json(job / 'video-progress.json',
+                        {'stage': stage, 'status': 'running', 'seconds': now - started, **extra})
+            last[:] = [stage, now]
+
+    return progress
+
+
+def _failure(report, job, exc):
+    code = getattr(exc, 'code', 'WORKER_FAILED')
+    report.update(status='cancelled' if code == 'CANCELLED' else 'failed',
+                  error={'code': code, 'message': str(exc)})
+    atomic_json(job / 'video-report.json', report)
+    atomic_json(job / 'video-progress.json',
+                {'stage': report.get('stage', 'worker'), 'status': report['status'],
+                 'error': report['error'], 'recovery': report.get('recovery', {})})
+    if isinstance(exc, contract.WorkflowError):
+        raise Failure(exc.code, str(exc)) from exc
+    raise
+
+
+def _save_candidate(job, progress):
+    destination = job / 'video-candidate.blend'
+    if destination.exists():
+        raise Failure('CONFLICT', 'Owned candidate already exists')
+    progress('save_checkpoint')
+    bpy.ops.wm.save_as_mainfile(filepath=str(destination), check_existing=False, relative_remap=True)
+    return _descriptor(destination)
+
+
+def _finish_candidate(params, job, report, candidate, scene, workflow_id, progress, started):
+    report['candidate'] = candidate
+    report['inspection'] = copy.deepcopy(report['saved_expectation']['inspection'])
+    atomic_json(job / 'video-shots.json', _shots(report['inspection']))
+    from filesystem import FileGuard
+    with FileGuard(candidate['file']) as guard:
+        if guard.sha256() != candidate['sha256']:
+            raise Failure('CONFLICT', 'Candidate changed before independent verification')
+        progress('independent_reopen')
+        report['verification'] = _reopen(candidate, params, report, job, progress, scene, workflow_id)
+        report['recovery'] = {'available': True, 'checkpoint': candidate,
+                              'resume_report': str(job / 'video-report.json'),
+                              'binding': 'Original request, source/resources/implementation/runtime SHA and original saved expectation; new job only'}
+        difference = mismatch(report['saved_expectation'], _saved_expectation(params))
+        if difference:
+            raise Failure('VALIDATION_FAILED', 'Candidate state changed during verification: ' + difference)
+        if guard.sha256() != candidate['sha256']:
+            raise Failure('CONFLICT', 'Candidate bytes changed during verification')
+    _check_inputs(params)
+    report['checks'].update(source_resources_implementation_sha='passed',
+                            candidate_bytes_unchanged='passed', independent_reopen='passed')
+    report['status'] = 'passed'
+    report['metrics'] = {'wall_seconds': time.monotonic() - started,
+                         'clip_count': len(report['inspection'].get('clips', []))}
+    atomic_json(job / 'video-report.json', report)
+    atomic_json(job / 'video-progress.json',
+                {'stage': 'complete', 'status': 'passed', 'seconds': report['metrics']['wall_seconds']})
+    return report
+
+
+def ripple(params, job):
+    params = normalize_ripple_params(params)
+    job = Path(job)
+    started = time.monotonic()
+    report = {'video_report_version': '1.0', 'addon_version': '0.1.2', 'status': 'running',
+              'source': {'file': params['file'], 'sha256': params['expected_sha256']},
+              'runtime': runtime_identity(bpy), 'implementation_sha256': params['implementation_sha256'],
+              'signature': signature(params), 'recovery': {'available': False}, 'output_files': [],
+              'checks': {'source_resources_implementation_sha': 'not_run',
+                         'independent_reopen': 'not_run', 'render': 'not_run',
+                         'visual_quality': 'not_run', 'audio_listening': 'not_run'},
+              'support': {'stage': 'technical_A_development',
+                          'scope': 'short SDR managed ripple; no render/output',
+                          'HDR10_PQ': 'not_requested_in_this_job', 'real_AI_film': 'not_run'}}
+    progress = _progress(job, report, started)
+    try:
+        progress('source_open')
+        _check_inputs(params)
+        bpy.ops.wm.open_mainfile(filepath=params['file'], load_ui=False, use_scripts=False)
+        if tuple(bpy.data.version[:2]) != tuple(bpy.app.version[:2]):
+            raise Failure('UNSUPPORTED', 'Video requires matching Blender major/minor')
+        report['source_resource_paths'] = _resource_closure(params)
+        progress('apply')
+        operation = _call(core.ripple, params['scene'], params['workflow_id'],
+                          params['clip_id'], params['duration'], params.get('edge', 'END'))
+        if not isinstance(operation, dict) or operation.get('protection', {}).get('status') != 'passed':
+            raise Failure('VALIDATION_FAILED', 'Core must prove scoped non-target protection')
+        report['operation'] = operation
+        report['protection'] = operation['protection']
+        report['ripple'] = operation['ripple']
+        report['saved_expectation'] = _saved_expectation(params)
+        atomic_json(job / 'video-ripple.json', {'ripple': operation['ripple'],
+                                                'operation_log': operation['operation_log']})
+        candidate = _save_candidate(job, progress)
+        return _finish_candidate(params, job, report, candidate, params['scene'],
+                                 params['workflow_id'], progress, started)
+    except Exception as exc:
+        _failure(report, job, exc)
+
+
+def _native_otio_check(otio_descriptor, specs, job, progress):
+    from otio_exchange import native_rows
+    request = job / 'video-otio-verification-request.json'
+    output = job / 'video-otio-verification.json'
+    if request.exists() or output.exists():
+        raise Failure('CONFLICT', 'Owned OTIO verification phase already exists')
+    config = {'otio': otio_descriptor, 'expected': native_rows(specs['clips']),
+              'timeline': specs['timeline'], 'output': str(output)}
+    atomic_json(request, config)
+    command = [bpy.app.binary_path, '--background', '--factory-startup', '--disable-autoexec',
+               '--offline-mode', '--python-exit-code', '23', '--python',
+               str(Path(__file__).with_name('otio_verifier.py')), '--', str(request)]
+    deadline = time.monotonic() + 120
+    with (job / 'video-otio-verification.stdout.log').open('wb') as stdout, \
+            (job / 'video-otio-verification.stderr.log').open('wb') as stderr:
+        process = subprocess.Popen(command, stdout=stdout, stderr=stderr)
+        try:
+            while process.poll() is None:
+                progress('otio_native_import')
+                if time.monotonic() > deadline:
+                    raise Failure('TIMEOUT', 'Native OTIO verifier exceeded 120 seconds')
+                time.sleep(.2)
+        except BaseException:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+            raise
+    result = read_json(output) if output.is_file() else {}
+    if process.returncode != 0 or result.get('status') != 'passed':
+        raise Failure('VALIDATION_FAILED', 'Native OTIO verification failed: ' +
+                      str(result.get('error', process.returncode)))
+    return result
+
+
+def otio_export(params, job):
+    params = normalize_otio_export_params(params)
+    job = Path(job)
+    started = time.monotonic()
+    report = {'video_report_version': '1.0', 'addon_version': '0.1.2', 'status': 'running',
+              'source': {'file': params['file'], 'sha256': params['expected_sha256']},
+              'runtime': runtime_identity(bpy), 'implementation_sha256': params['implementation_sha256'],
+              'signature': signature(params), 'recovery': {'available': False}, 'output_files': [],
+              'checks': {'source_resources_implementation_sha': 'not_run',
+                         'otio_readback': 'not_run', 'native_import': 'not_run',
+                         'visual_quality': 'not_run', 'audio_listening': 'not_run'},
+              'support': {'stage': 'technical_A_development',
+                          'scope': 'short SDR cut-only OTIO export; no render',
+                          'HDR10_PQ': 'not_requested_in_this_job', 'real_AI_film': 'not_run'}}
+    progress = _progress(job, report, started)
+    try:
+        progress('source_open')
+        _check_inputs(params)
+        bpy.ops.wm.open_mainfile(filepath=params['file'], load_ui=False, use_scripts=False)
+        if tuple(bpy.data.version[:2]) != tuple(bpy.app.version[:2]):
+            raise Failure('UNSUPPORTED', 'Video requires matching Blender major/minor')
+        report['source_resource_paths'] = _resource_closure(params)
+        progress('otio_export')
+        specs = _call(core.export_cut_specs, params['scene'], params['workflow_id'])
+        import otio_exchange
+        timeline = otio_exchange.timeline_from_specs(specs)
+        destination = job / 'video-otio.otio'
+        if destination.exists():
+            raise Failure('CONFLICT', 'Owned OTIO output already exists')
+        otio_exchange.write_timeline(timeline, destination)
+        descriptor = _descriptor(destination)
+        resources = {row['file'].casefold(): row for row in params['resources']}
+        progress('otio_readback')
+        readback = otio_exchange.read_timeline(destination)
+        manifest = otio_exchange.specs_from_timeline(
+            readback, params['scene'] + '_otio_readback', params['workflow_id'], resources)
+        differences = otio_exchange.diff_specs(specs['clips'], manifest['clips'])
+        if differences:
+            raise Failure('VALIDATION_FAILED', 'OTIO readback differs: ' +
+                          json.dumps(differences[:4], ensure_ascii=False))
+        report['otio'] = {'status': 'pending', 'file': descriptor,
+                          'cut_count': len(specs['clips']),
+                          'tracks': specs['channels'],
+                          'timeline': specs['timeline'], 'scope': specs['scope']}
+        report['verification'] = {'status': 'pending', 'readback': 'passed',
+                                  'native_import': 'pending'}
+        report['verification']['native_import'] = _native_otio_check(descriptor, specs, job, progress)
+        report['otio']['status'] = 'passed'
+        report['verification']['status'] = 'passed'
+        _resource_closure(params)
+        _check_inputs(params)
+        report['outputs'] = {'status': 'passed', 'format': 'OTIO', 'otio': descriptor,
+                             'cut_count': len(specs['clips']),
+                             'verification': report['verification']}
+        report['output_files'] = [descriptor]
+        report['inspection'] = _json(_call(core.inspect, params['scene'], params['workflow_id']))
+        report['checks'].update(source_resources_implementation_sha='passed',
+                                otio_readback='passed', native_import='passed',
+                                source_unchanged='passed')
+        report['status'] = 'passed'
+        report['metrics'] = {'wall_seconds': time.monotonic() - started,
+                             'clip_count': len(specs['clips'])}
+        atomic_json(job / 'video-report.json', report)
+        atomic_json(job / 'video-progress.json',
+                    {'stage': 'complete', 'status': 'passed',
+                     'seconds': report['metrics']['wall_seconds']})
+        return report
+    except Exception as exc:
+        _failure(report, job, exc)
+
+
+def otio_import(params, job):
+    params = normalize_otio_import_params(params)
+    job = Path(job)
+    started = time.monotonic()
+    report = {'video_report_version': '1.0', 'addon_version': '0.1.2', 'status': 'running',
+              'source': {'file': params['file'], 'sha256': params['expected_sha256']},
+              'otio': params['otio'],
+              'runtime': runtime_identity(bpy), 'implementation_sha256': params['implementation_sha256'],
+              'signature': signature(params), 'recovery': {'available': False}, 'output_files': [],
+              'checks': {'source_resources_implementation_sha': 'not_run',
+                         'otio_structure': 'not_run', 'independent_reopen': 'not_run',
+                         'visual_quality': 'not_run', 'audio_listening': 'not_run'},
+              'support': {'stage': 'technical_A_development',
+                          'scope': 'short SDR cut-only OTIO import; no render',
+                          'HDR10_PQ': 'not_requested_in_this_job', 'real_AI_film': 'not_run'}}
+    progress = _progress(job, report, started)
+    try:
+        progress('source_open')
+        _check_inputs(params)
+        bpy.ops.wm.open_mainfile(filepath=params['file'], load_ui=False, use_scripts=False)
+        if tuple(bpy.data.version[:2]) != tuple(bpy.app.version[:2]):
+            raise Failure('UNSUPPORTED', 'Video requires matching Blender major/minor')
+        if bpy.data.scenes.get(params['scene']) is not None:
+            raise Failure('CONFLICT', 'Import target scene already exists')
+        report['source_resource_paths'] = _resource_closure(params)
+        progress('otio_import')
+        import otio_exchange
+        timeline = otio_exchange.read_timeline(params['otio']['file'])
+        resources = {row['file'].casefold(): row for row in params['resources']}
+        manifest = otio_exchange.specs_from_timeline(
+            timeline, params['scene'], params['workflow_id'], resources)
+        _call(core._scope, manifest['timeline'], 'Cut-only OTIO import')
+        operation = _call(core.apply, manifest)
+        if not isinstance(operation, dict) or operation.get('protection', {}).get('status') != 'passed':
+            raise Failure('VALIDATION_FAILED', 'Core must prove scoped non-target protection')
+        report['operation'] = operation
+        report['protection'] = operation['protection']
+        report['otio'] = {**params['otio'],
+                          'manifest': {'timeline': manifest['timeline'],
+                                       'clip_count': len(manifest['clips'])}}
+        report['saved_expectation'] = _saved_expectation(params)
+        report['checks']['otio_structure'] = 'passed'
+        candidate = _save_candidate(job, progress)
+        return _finish_candidate(params, job, report, candidate, params['scene'],
+                                 params['workflow_id'], progress, started)
+    except Exception as exc:
+        _failure(report, job, exc)
+
+
 def inspect(params, job):
     params = normalize_inspect_params(params)
     _check_inputs(params)
     bpy.ops.wm.open_mainfile(filepath=params['file'], load_ui=False, use_scripts=False)
     paths = _resource_closure(params)
     inspection = _json(_call(core.inspect, params['scene'], params.get('workflow_id')))
-    report = {'video_report_version': '1.0', 'addon_version': '0.1-dev', 'status': 'passed',
+    report = {'video_report_version': '1.0', 'addon_version': '0.1.2', 'status': 'passed',
               'source': {'file': params['file'], 'sha256': params['expected_sha256']},
               'implementation_sha256': params['implementation_sha256'], 'runtime': runtime_identity(bpy),
               'inspection': inspection, 'resource_paths': paths, 'source_saved': False,
@@ -271,3 +545,4 @@ def inspect(params, job):
     _check_inputs(params)
     atomic_json(Path(job) / 'video-report.json', report)
     return report
+

@@ -1,17 +1,17 @@
 # Blender 后期剪辑工作流
 
-Publication revision **0.1.3-r1** fixes Windows CI temporary-path normalization in test fixtures. Product/runtime versions are unchanged.
+**0.1.4** 新增 Blender 5.3 适配。波纹编辑可以联动移动后续画面、音频和字幕，基础 OTIO 交换覆盖纯剪切的画面及音频。
 
 用于白膜分镜参考、AI 视频回流成片和 Blender 动画剪辑。源码包包含同一已验 CLI 快照、小型 VSE 插件核心、可移植配套技能与通用模板库。
 
-**发行版 0.1.3｜CLI 0.63.0｜插件 0.1.1｜模板库 0.1.0｜GPL-3.0-or-later**
+**发行版 0.1.4｜CLI 0.63.0｜插件 0.1.2｜模板库 0.1.0｜GPL-3.0-or-later**
 
 - [安装与操作](docs/VIDEO-EDITING.md)：CLI、Blender 插件和技能分别如何使用。
 - [技能](skills/blender-video-editing/SKILL.md)：剪辑方法、镜头候选、字幕声音、人工往返及验收。
 - [模板库](templates/video/README.md)：4 个预设、自定义模板与显式批量编译。
 - [验证边界](docs/VALIDATION.md)：运行身份、发行校验与未验范围。
 
-从 [Releases](https://github.com/tsist/blender-video-editing-workflow/releases) 下载完整 source ZIP。已有 Python 3.12+ 和 Blender 5.2 后，从源码根执行 `python -B tools/blenderctl/cli.py video describe` 或 `python -B templates/video/cli.py list`。Windows 原生验收环境为 Blender 5.2.1 LTS。
+从发布页下载完整 source ZIP。在已安装 Blender 的 Windows 机器上，从源码根执行 `.\video-blenderctl.ps1 --blender $Blender video describe`，其中 `$Blender` 是可执行文件路径。Blender 5.2.1 和 5.3.0 均支持波纹编辑，OTIO 交换使用 5.3.0。[发布页](https://github.com/tsist/blender-video-editing-workflow/releases)
 
 独立安装技能或模板包时设置 `BLENDERCTL_ROOT` 为匹配源码根，不能只复制 CLI 单文件。插件 ZIP 用 Blender 的“从磁盘安装”入口安装；技能目录可复制到 agent 的技能目录，保留 references/scripts。
 
