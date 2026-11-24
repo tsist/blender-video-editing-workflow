@@ -539,7 +539,9 @@ def apply(manifest):
             if cid not in specs:
                 _error('NOT_FOUND', 'Clip missing: ' + cid)
             strip = owned[cid]
-            if strip.lock or scene.sequence_editor.channels[strip.channel - 1].lock:
+            # A pure unlock can release a manual strip lock without widening the edit.
+            unlocking = strip.lock and op == 'update' and edit['changes'] == {'lock': False}
+            if (strip.lock and not unlocking) or scene.sequence_editor.channels[strip.channel - 1].lock:
                 _error('CONFLICT', 'Clip is locked: ' + cid)
             current, baseline = specs[cid], _read(strip, '_vwe_baseline', {})
             if op == 'remove':
@@ -559,7 +561,7 @@ def apply(manifest):
             else:
                 fields = edit['changes']
             for field, value in fields.items():
-                if not _equal(current.get(field), baseline.get(field)) and not _equal(current.get(field), value):
+                if not unlocking and not _equal(current.get(field), baseline.get(field)) and not _equal(current.get(field), value):
                     _error('CONFLICT', 'Manual edit conflicts at ' + cid + '.' + field)
             if cid in state['diagnostics']['manual_animation'] and set(fields) - {'name', 'channel', 'lock', 'shot_id', 'candidate_id', 'alternatives'}:
                 _error('CONFLICT', 'Manual animation conflicts: ' + cid)
