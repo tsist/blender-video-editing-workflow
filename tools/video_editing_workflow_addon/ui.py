@@ -32,7 +32,7 @@ class VWE_PT_timeline(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         owner = context.scene.get('_vwe_workflow')
-        layout.label(text='技术开发版 0.1.2')
+        layout.label(text='0.2.0')
         layout.label(text='工作流：' + (owner or '未受管'))
         layout.operator('vwe.inspect')
         editor = context.scene.sequence_editor

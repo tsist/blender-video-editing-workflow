@@ -523,16 +523,22 @@ def _inputs(value, schema):
     return value
 
 
+def _clip_descriptors(clip):
+    if 'font' in clip:
+        yield clip['font']
+    sources = [clip['source']] if 'source' in clip else []
+    sources.extend(row['source'] for row in clip.get('alternatives', []))
+    for source in sources:
+        yield from source['files']
+
+
 def _descriptors(manifest):
     clips = manifest.get('clips', [])
     if manifest['action'] == 'patch':
         clips = [e['clip'] if e['op'] == 'add' else e['changes']
                  for e in manifest['edits'] if e['op'] in ('add', 'update')]
     for clip in clips:
-        if 'font' in clip:
-            yield clip['font']
-        for source in ([clip['source']] if 'source' in clip else []) + [a['source'] for a in clip.get('alternatives', [])]:
-            yield from source['files']
+        yield from _clip_descriptors(clip)
 
 
 def normalize_params(value):

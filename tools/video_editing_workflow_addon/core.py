@@ -26,6 +26,18 @@ def _error(code, message):
     raise WorkflowError(code, message)
 
 
+def batch_edit(request, *, checkpoint_dir):
+    """Run the candidate's batch operation in an isolated Blender worker."""
+    from .batch_edit import run
+    return run(request, checkpoint_dir=checkpoint_dir)
+
+
+def verify_batch_resources(request, resources, *, expected=None, cache=None):
+    """Validate a loaded VSE project's media and compare a saved expectation."""
+    from .batch_resources import verify
+    return verify(request, resources, expected=expected, cache=cache)
+
+
 def _json(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False)
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+Adds Blender 5.3 managed batch splitting, insertion and removal with explicit track scope. Cuts can use a timeline frame, a shot-relative edge, a named marker or a prior operation's actual result. Group and batch rollback protect locked strips, animation data and untouched tracks. Includes source, saved and cold-reopened media checks with pinned FFprobe for supported movie inputs.
+
 ## 0.1.4
 
 Builds on Blender 5.3 for native cut-only OTIO exchange. Adds managed ripple editing on Blender 5.3 and 5.2.1, plus a launcher that selects the Blender executable and its matching bundled Python.

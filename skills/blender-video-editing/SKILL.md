@@ -62,6 +62,12 @@ $ctl = './blenderctl.ps1'
 - **恢复旧作业**：续跑或查取历史 0.1.4 分发作业时，保留原 `--jobs-dir`，在 `video` 子命令前加上 `--video-release 0.1.4`，再执行 `video job result $jobId`；用 `resume` 指向旧完整 `video-report.json` 及其 SHA256 在新作业里重跑完整输出。
 - **冷重开与真片核对**：导出完成后另起独立进程重开候选工程核对帧域与引用。整片与逐镜视频全部真实解码，亲眼抽看切点前后、快动作、停帧与每条字幕首中末，亲耳听检对白清晰度、音乐过渡与音画落点；待听检或待设备观看项如实标注 `not_run`。
 
+## Blender 5.3 批量精剪
+
+在 Windows Blender 5.3.0 使用公共 blenderctl v0.64.0，向 `production.run` 提交 `domain=video`、`release=1.0.0` 和剪辑操作。每项显式列出受影响轨道。可按绝对帧号、`shot_id` 相对边界、唯一命名标记或前项实际结果 `result_of` 定位。前三种从提交前的工程定位，`result_of` 接前项实际产生的边界。
+
+默认 `atomicity=group`，冲突组恢复，独立组继续。需要整批锁片时用 `atomicity=batch`。查看 `operation_log` 的实际剪点、位移和回滚状态，并冷开核对画面源入点、锁定轨、字幕、标记和音画锚点。带外链时逐项声明绝对路径和 SHA-256。MOVIE 使用经核验的 FFprobe，素材须为与时间线同帧率的 CFR、零起点、方像素及视频流 0。[公开调用示例](https://github.com/tsist/blender-video-editing-workflow/blob/v0.2.0/docs/BATCH-EDITING.md)
+
 ## 交给下游
 
 审看①（粗剪）、审看②（精剪）与最终交付分别提供：

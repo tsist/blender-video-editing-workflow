@@ -1,13 +1,13 @@
 {
   "repository": "blender-video-editing-workflow",
-  "release": "0.1.4",
+  "release": "0.2.0",
   "cli": "0.63.0",
-  "distribution": "0.1.4",
-  "addon": "0.1.2",
+  "distribution": "0.2.0",
+  "addon": "0.2.0",
   "template_library": "0.1.0",
   "skill_bundle": "0.3.0",
-  "runtime_identity": "06d63be54ea72ab95090a15fc8949a60c761808f6f16c9eb77e80e55314ed400",
-  "runtime_files": 191,
+  "runtime_identity": "9952b11c019aba4adf4144b73ab2fa02f8d470a742bd29fe56ce53c1f82ba847",
+  "runtime_files": 195,
   "license": "GPL-3.0-or-later",
   "files": [
     {
@@ -32,8 +32,8 @@
     },
     {
       "file": "CHANGELOG.md",
-      "sha256": "89c5b9fa47f650fb33d0c1aedf3cef2df090f2cb8227df2fa450f646b39d26ef",
-      "bytes": 671
+      "sha256": "bddb0605be440c7fee725d0c7bb8d0d095fbe46b8e77a25b3417f7142c954f00",
+      "bytes": 1066
     },
     {
       "file": "CONTRIBUTING.md",
@@ -802,13 +802,13 @@
     },
     {
       "file": "docs/VALIDATION.md",
-      "sha256": "4e53215190787b2af66d80b279f4151d860dfde5771dce8b5c1767f063884aa4",
-      "bytes": 2549
+      "sha256": "ebfa3f368f6d453bc2841eb07c33b8635397ebc771a9b115797cb38743d14462",
+      "bytes": 3112
     },
     {
       "file": "docs/VIDEO-EDITING.md",
-      "sha256": "19942aaaa8ad6cac8b5d5eb324aae760d7577a1d06cf00aa05241d9ab0b59562",
-      "bytes": 5702
+      "sha256": "ff1045b9e08d19f77520a6759d9aae9b25c63e52fe59f6ebd6b8e62db5a7b147",
+      "bytes": 5484
     },
     {
       "file": "examples/create_fixture.py",
@@ -827,13 +827,13 @@
     },
     {
       "file": "README.md",
-      "sha256": "1caf0c8a1bb64a77b2d8667775c689bdb433acb9f5a2a5a52c6dc2ecd6a997ca",
-      "bytes": 3045
+      "sha256": "dae39195216f5ffe8ed7ebc3698a7ecdb57673fe1487cc9b369bdbd0cf7c122b",
+      "bytes": 3518
     },
     {
       "file": "README.zh-CN.md",
-      "sha256": "d4edd8e7ac9a16a740c6c9b69a6eafbb099f35e49466756ad744a77b37794f3d",
-      "bytes": 2017
+      "sha256": "88a99d46ac3770acd3c680cd7ac9ff7ef8ea516567d33807329c6c789ecf67f0",
+      "bytes": 2277
     },
     {
       "file": "RELEASE-VALIDATION.json",
@@ -847,7 +847,7 @@
     },
     {
       "file": "scripts/verify_release.py",
-      "sha256": "82bd7c36a63764ce1c5fa114806458396235a1d32a05abc11d357936f71515a6",
+      "sha256": "92e3fdff07251eb8fb9b4d4e8fefd8ae3d62e932de6ffd70e5dad98069813950",
       "bytes": 4733
     },
     {
@@ -907,8 +907,8 @@
     },
     {
       "file": "skills/blender-video-editing/SKILL.md",
-      "sha256": "323c1bfd97b8eb531795dc100cf209c56a5848b46194faefec79e1d5098f681a",
-      "bytes": 10308
+      "sha256": "5a08e6bca9a67f7a06ce7f0a0f2d9677f6f0bddf348ea0d57740b7c73a004a7b",
+      "bytes": 11235
     },
     {
       "file": "templates/video/catalog.json",
@@ -932,7 +932,7 @@
     },
     {
       "file": "templates/video/template_library.py",
-      "sha256": "ba2ec1061acf33aa3c31f9cb20f2d13d300653223e0b16394e9eff092a8481a2",
+      "sha256": "e5f71f307cae8ef24a06536b1c7428a217eee950a1ac9107eca212cc3ce2bd04",
       "bytes": 32601
     },
     {
@@ -2087,23 +2087,23 @@
     },
     {
       "file": "tools/video_editing_workflow_addon/__init__.py",
-      "sha256": "4d802a8782e62d73b38b84da80ce362a41a68a9896f391d9ef13f9e43595acc0",
-      "bytes": 487
+      "sha256": "fa9b65991dcaf9a2bbdeea0434765f27890446910413a9d634a358e645548c58",
+      "bytes": 505
     },
     {
       "file": "tools/video_editing_workflow_addon/blender_manifest.toml",
-      "sha256": "71b425e15ea3ccf591ead7d64eaeb2442644a040c83f2180789a3358933b0955",
-      "bytes": 294
+      "sha256": "3f29a7de0b5a7e45304274f5daca25d4facd5e3c8747f018b2a892019a4072fd",
+      "bytes": 304
     },
     {
       "file": "tools/video_editing_workflow_addon/contract.py",
-      "sha256": "757df341c1c005330f4491441f09f98f9a3296b9180c2f36d9baaced89980f04",
-      "bytes": 28492
+      "sha256": "17dc0de504e5ea73f1907d243faf74809307eccf1f4629420b743bcda91bbfe4",
+      "bytes": 28590
     },
     {
       "file": "tools/video_editing_workflow_addon/core.py",
-      "sha256": "8acdf1efe21b1b2207c452d8d212701e729a1b56718b93fec6739928d1a32f7e",
-      "bytes": 44251
+      "sha256": "2bcf162d7a2ed431a5224369d155c68d103273c435b814b0bf5483bf85c1490a",
+      "bytes": 44732
     },
     {
       "file": "tools/video_editing_workflow_addon/LICENSE.txt",
@@ -2112,8 +2112,8 @@
     },
     {
       "file": "tools/video_editing_workflow_addon/protection.py",
-      "sha256": "e3bac01875e66f9a6081fa1f49b698bfffee9c5b6c525d473ad2d15c4cbd92d8",
-      "bytes": 23951
+      "sha256": "a5fa354d7e46a181edb0dc8b6547c7540950b5d5a52ab778e3c8752983ec484d",
+      "bytes": 25385
     },
     {
       "file": "tools/video_editing_workflow_addon/retiming.py",
@@ -2127,13 +2127,38 @@
     },
     {
       "file": "tools/video_editing_workflow_addon/ui.py",
-      "sha256": "a70573d7745f47bdce69a664c80112a0425f139ae6731ce996d1f5c609e4fcb4",
-      "bytes": 2359
+      "sha256": "a2e3d46db03cef83852cde49753d7a5ab4d3d52cf76b7b4dd5eb41f41594b632",
+      "bytes": 2405
     },
     {
       "file": "video-blenderctl.ps1",
       "sha256": "3c461b7bb8f7615f0e1745fb1d80f8326d88a54a4244c78d5791743c4b23c6b2",
       "bytes": 2889
+    },
+    {
+      "file": "docs/BATCH-EDITING.md",
+      "sha256": "9d79c069efb5280c4d84718cb497542398ca91680e1cf6a094e751e5232d364c",
+      "bytes": 4717
+    },
+    {
+      "file": "tools/video_editing_workflow_addon/batch_contract.py",
+      "sha256": "f2f08918d70654c8c29647decbae9fb8751c635b2e6560e51e7bc0a6db3181b9",
+      "bytes": 2347
+    },
+    {
+      "file": "tools/video_editing_workflow_addon/batch_edit.py",
+      "sha256": "42bfa82fbf61fd510375e2b176dd7cf55f8d2f6500ddc9ee75534173299b4cb3",
+      "bytes": 24800
+    },
+    {
+      "file": "tools/video_editing_workflow_addon/batch_plan.py",
+      "sha256": "0190913990529c2107a264bc97804640fb0514b821a94ea4fce77f7463dcd64d",
+      "bytes": 7006
+    },
+    {
+      "file": "tools/video_editing_workflow_addon/batch_resources.py",
+      "sha256": "1c8a7434000ec20fe52771ef88040902e9592cfa68605c3ce74ecf01ccf5d06b",
+      "bytes": 11760
     }
   ]
 }

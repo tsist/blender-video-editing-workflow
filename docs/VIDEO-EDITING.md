@@ -1,6 +1,6 @@
 # Video editing distribution
 
-Use Python 3.12+ and an existing Blender 5.2 installation. Native qualification is limited to Windows / Blender 5.2.1 LTS build `9e2066aef7ef`. Host CI on another OS does not qualify Blender there. No binaries, fonts, user footage or production projects are bundled.
+Use Python 3.12+ and Blender 5.3.0 for this release. Batch editing uses the public blenderctl v0.64.0 and production package `1.0.0` on Windows Blender 5.3.0. See [batch editing](BATCH-EDITING.md) and [validation](VALIDATION.md). The source and extension packages contain code and documentation.
 
 Set `BLENDERCTL_ROOT` to this source checkout when installing a skill or template archive separately. `BLENDERCTL_PYTHON` selects the Python used by `blenderctl.ps1`; `--blender` selects Blender; `BLENDER_PATH` below is only a shell variable passed explicitly. A template compiler checks the full runtime identity, not just the CLI version string.
 
@@ -19,7 +19,7 @@ The source ZIP is self-contained at the source level: retain the `tools` hierarc
 Run from the source root with a real executable path. The example creates an empty new source and eight 160×90 SDR color frames; no fonts, sound or downloads. Use new output locations and keep the jobs with the candidate.
 
 ```powershell
-$env:BLENDER_PATH = 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe'
+$env:BLENDER_PATH = (Get-Command blender.exe).Source
 $exampleDir = [System.IO.Path]::GetFullPath('../video-example-output')
 & $env:BLENDER_PATH --background --factory-startup --disable-autoexec --threads 1 --python examples/create_fixture.py -- ../video-example-output/seed.blend
 python -B examples/make_input.py --source ../video-example-output/seed.blend --output ../video-example-output/input.json
@@ -32,7 +32,7 @@ Check native exit code, JSON `ok`, job terminal state, report and output bytes. 
 
 ## Blender extension
 
-Download `video_editing_workflow_addon-0.1.1.zip`, install through Blender's **Install from Disk**, and enable Video Editing Workflow. This is a small shared VSE core and inspection/editing UI; the CLI works with source snapshots in the package without requiring global addon installation. An enabled addon does not prove a production case passed. Do not mix a different addon core into this SHA-bound source tree.
+Download `video_editing_workflow_addon-0.2.0.zip`, install through Blender's **Install from Disk**, and enable Video Editing Workflow. The installation provides an inspection and editing panel in the Sequencer. The CLI loads the source package pinned to each request.
 
 ## Agent skill
 
@@ -48,4 +48,4 @@ Inputs are saved disk snapshots. Work on new candidates, preserve manual/locked/
 
 Base video workflow supports bounded retiming/freeze/replacement, candidates, original-speed dialogue/music/SFX, volume/fades, subtitle/title editing, basic transforms/color and explicit outputs. Complex effects belong to the compositing workflow. HLG, arbitrary imported VSE continuation, audio time-stretch, nonzero pan and HDR display viewing are not supported. Technical PQ/10-bit paths have limited prior evidence; 4K HDR and long combined loads are not qualified. This template library deliberately rejects HDR. Complex performance and real long-form production remain future validation goals.
 
-The compiler refuses output/custom-library locations inside the protected source root. Place project outputs in a sibling or other explicitly selected external directory. FFmpeg/ffprobe for MP4 or preparation helpers must be explicitly bound by their real executable paths and SHA-256; PNG-only examples do not need them. Some legacy native report fields still show `addon_version: 0.1-dev`; the authoritative addon version is the shipped `blender_manifest.toml` (0.1.1).
+The compiler refuses output/custom-library locations inside the protected source root. Place project outputs in a sibling or other explicitly selected external directory. For MP4 or media preparation, identify FFmpeg and FFprobe by their executable paths and SHA-256. Some legacy native report fields still show `addon_version: 0.1-dev`. The shipped `blender_manifest.toml` records the addon version.
