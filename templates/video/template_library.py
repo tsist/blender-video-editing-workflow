@@ -15,7 +15,7 @@ import uuid
 VERSION = '0.1.0'
 ROOT = Path(__file__).resolve().parent
 RUNTIME_ROOT = Path(os.environ.get('BLENDERCTL_ROOT', str(ROOT.parents[1]))).resolve()
-RUNTIME_SHA256 = '9952b11c019aba4adf4144b73ab2fa02f8d470a742bd29fe56ce53c1f82ba847'
+RUNTIME_SHA256 = 'dbfa3dee3e4d6b2557aa682f6d5a3b68231520390c8a8d15bfecb22417c33ea3'
 PINNED_CATALOG_SHA256 = '9f41f0e04de4404d16c8c10d6bef8da3d59f514a82316d5d0c7252629681862f'
 MAX_JSON_BYTES = 16 * 1024 * 1024
 _CONTRACT = None

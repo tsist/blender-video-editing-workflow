@@ -12,7 +12,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 ADDON = 'tools/video_editing_workflow_addon/'
 BLOCKED = {'.git', '__pycache__', '.venv', 'audit', 'research', 'tests-output', 'dist'}
-IDENTITY = '9952b11c019aba4adf4144b73ab2fa02f8d470a742bd29fe56ce53c1f82ba847'
+IDENTITY = 'dbfa3dee3e4d6b2557aa682f6d5a3b68231520390c8a8d15bfecb22417c33ea3'
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
@@ -62,6 +62,10 @@ def verify(root=ROOT):
         path = safe_file(root, name)
         if path.suffix.lower() in {'.pyc', '.blend', '.blend1', '.exe', '.dll'} or path.name in {'AGENTS.md', '.env', 'secrets.json'}:
             raise ValueError('Forbidden release file: ' + name)
+        if path.suffix.lower() == '.png':
+            if path.read_bytes()[:8] != b'\x89PNG\r\n\x1a\n':
+                raise ValueError('Invalid PNG: ' + name)
+            continue
         text = path.read_text(encoding='utf-8-sig')
         if private_findings(text):
             raise ValueError('Private content pattern in: ' + name)

@@ -11,6 +11,7 @@ from fractions import Fraction
 from pathlib import Path
 
 import bpy
+from . import finishing
 from .contract import WorkflowError, normalize_manifest, validate_clip
 from .protection import (snapshot_protection, resource_paths, native_strip_record,
                          compare_protection)
@@ -20,6 +21,8 @@ from . import retiming
 RIPPLE_MAX_SECONDS = 600
 RIPPLE_MAX_WIDTH = 1920
 RIPPLE_MAX_HEIGHT = 1080
+CAPTION_STYLE = {'wrap_width', 'use_outline', 'outline_color', 'outline_width',
+                 'use_shadow', 'shadow_color', 'use_box', 'box_color', 'alignment_x'}
 
 
 def _error(code, message):
@@ -205,6 +208,10 @@ def _actual(scene, strip):
             src.update(speed=1, freeze=False)
     if spec['kind'] == 'TEXT':
         result.update(text=media.text, font_size=int(media.font_size), color=list(media.color))
+        for key in CAPTION_STYLE:
+            if key in spec:
+                value = getattr(media, key)
+                result[key] = list(value) if key.endswith('_color') else value
         if media.font and 'font' in spec:
             if _path(media.font.filepath) != spec['font']['file']:
                 result['font'] = _file(media.font.filepath)
@@ -394,6 +401,8 @@ def _style(scene, strip, spec, fields=None, font_cache=None):
     if spec['kind'] == 'TEXT':
         if 'text' in fields:
             strip.text = spec['text']
+        for key in CAPTION_STYLE.intersection(fields):
+            setattr(strip, key, spec[key])
         if 'font_size' in fields:
             strip.font_size = spec['font_size']
         if 'color' in fields:
@@ -618,7 +627,7 @@ def apply(manifest):
                 if op == 'replace' and current['kind'] in {'IMAGE', 'MOVIE'} and 'transform' not in fields:
                     fit_scale = _read(strip, '_vwe_fit_scale')
                     if fit_scale is None:
-                        # Compatibility with early development candidates.
+                        # Compatibility with earlier saved strip records.
                         if strip.type == 'META' or current.get('fit') == 'ORIGINAL':
                             fit_scale = [1.0, 1.0]
                         else:

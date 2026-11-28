@@ -89,7 +89,11 @@ KIND_FIELDS = {
     'MOVIE': {'source': SINGLE_SOURCE, **VISUAL},
     'SOUND': {'source': SOUND_SOURCE, 'volume': number(0, 1000), 'pan': number(-1, 1)},
     'TEXT': {'text': {'type': 'string', 'minLength': 1, 'maxLength': 100000},
-             'font': FILE, 'font_size': integer(1, 4096), 'color': COLOR, **VISUAL},
+             'font': FILE, 'font_size': integer(1, 4096), 'color': COLOR,
+             'wrap_width': number(0, 1), 'use_outline': BOOL, 'outline_color': COLOR,
+             'outline_width': number(0, 1), 'use_shadow': BOOL, 'shadow_color': COLOR,
+             'use_box': BOOL, 'box_color': COLOR, 'alignment_x': {'enum': ['LEFT', 'CENTER', 'RIGHT']},
+             **VISUAL},
 }
 CLIP_VARIANTS = []
 for _kind, _fields in KIND_FIELDS.items():
